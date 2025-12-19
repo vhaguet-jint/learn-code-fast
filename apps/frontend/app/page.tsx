@@ -95,32 +95,32 @@ Keep the solution O(n) by using a hash map.`);
   };
 
   return (
-    <main className="min-h-screen bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 text-slate-100">
-      <div className="mx-auto flex max-w-6xl flex-col gap-10 px-6 py-12">
-        <header className="flex flex-col gap-3">
-          <p className="text-sm font-semibold uppercase tracking-[0.2em] text-indigo-300">Learn Code Fast</p>
-          <h1 className="text-4xl font-bold md:text-5xl">Exercise playground</h1>
-          <p className="max-w-3xl text-lg text-slate-300">
-            Four-pane UI to explore LLM-generated coding tasks, edit code with Monaco, and run solutions once backend
-            endpoints are available.
-          </p>
-          <div className="flex flex-wrap items-center gap-3 text-sm text-slate-400">
-            <span className="rounded-full bg-indigo-500/10 px-3 py-1 text-indigo-200">Backend base: {apiBase}</span>
-            <span className="rounded-full bg-emerald-500/10 px-3 py-1 text-emerald-200">Editor: Monaco</span>
-            <span className="rounded-full bg-sky-500/10 px-3 py-1 text-sky-200">Markdown: ReactMarkdown</span>
+    <main className="flex min-h-screen flex-col bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 text-slate-100">
+      <div className="flex h-screen w-full flex-col gap-3 p-3 md:gap-4 md:p-4">
+        <header className="flex shrink-0 flex-col gap-1.5 md:gap-2">
+          <div className="flex items-center justify-between">
+            <div className="flex items-baseline gap-3">
+              <h1 className="text-2xl font-bold md:text-3xl">Exercise playground</h1>
+              <p className="hidden text-xs font-semibold uppercase tracking-[0.2em] text-indigo-300 sm:block">Learn Code Fast</p>
+            </div>
+            <div className="flex items-center gap-1.5 text-xs text-slate-400 md:gap-2">
+              <span className="rounded-full bg-indigo-500/10 px-2 py-0.5 text-indigo-200">Backend: {apiBase}</span>
+              <span className="hidden rounded-full bg-emerald-500/10 px-2 py-0.5 text-emerald-200 sm:inline">Monaco</span>
+              <span className="hidden rounded-full bg-sky-500/10 px-2 py-0.5 text-sky-200 md:inline">ReactMarkdown</span>
+            </div>
           </div>
         </header>
 
-        <section className="grid grid-cols-1 gap-6 lg:grid-cols-2 lg:grid-rows-[repeat(2,minmax(320px,1fr))]">
+        <section className="grid min-h-0 flex-1 grid-cols-1 gap-3 md:gap-4 xl:grid-cols-2 xl:grid-rows-2">
           {/* Top left - Markdown prompt */}
-          <div className="rounded-xl border border-slate-800 bg-slate-900/60 p-6 shadow-lg shadow-indigo-900/30">
-            <div className="flex items-start justify-between gap-4">
-              <div>
-                <p className="text-xs uppercase tracking-[0.2em] text-slate-400">Prompt</p>
-                <h2 className="text-2xl font-semibold">{exerciseTitle}</h2>
+          <div className="flex min-h-0 flex-col rounded-lg border border-slate-800 bg-slate-900/60 p-3 shadow-lg shadow-indigo-900/30 md:p-4 xl:row-span-1">
+            <div className="mb-2 flex items-start justify-between gap-2 md:mb-3">
+              <div className="min-w-0 flex-1">
+                <p className="text-xs uppercase tracking-wider text-slate-400">Prompt</p>
+                <h2 className="truncate text-lg font-semibold md:text-xl">{exerciseTitle}</h2>
               </div>
               <span
-                className={`rounded-md px-3 py-1 text-xs font-semibold capitalize ${exerciseDifficulty === 'easy'
+                className={`shrink-0 rounded px-2 py-0.5 text-xs font-semibold capitalize ${exerciseDifficulty === 'easy'
                     ? 'bg-emerald-500/10 text-emerald-200'
                     : exerciseDifficulty === 'medium'
                       ? 'bg-amber-500/10 text-amber-200'
@@ -130,28 +130,28 @@ Keep the solution O(n) by using a hash map.`);
                 {exerciseDifficulty}
               </span>
             </div>
-            <div className="mt-4 h-full overflow-auto rounded-lg border border-slate-800 bg-slate-950/60 p-4 text-sm text-slate-200">
-              <ReactMarkdown className="prose prose-invert max-w-none prose-pre:bg-slate-900 prose-pre:text-slate-100">
+            <div className="min-h-0 flex-1 overflow-auto rounded border border-slate-800 bg-slate-950/60 p-3 text-sm text-slate-200">
+              <ReactMarkdown className="prose prose-invert prose-sm max-w-none prose-pre:bg-slate-900 prose-pre:text-slate-100">
                 {promptMarkdown}
               </ReactMarkdown>
             </div>
           </div>
 
           {/* Top right - Monaco editor */}
-          <div className="rounded-xl border border-slate-800 bg-slate-900/60 p-6 shadow-lg shadow-indigo-900/30">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-xs uppercase tracking-[0.2em] text-slate-400">Editor</p>
-                <h2 className="text-2xl font-semibold">Solution workspace</h2>
+          <div className="flex min-h-0 flex-col rounded-lg border border-slate-800 bg-slate-900/60 p-3 shadow-lg shadow-indigo-900/30 md:p-4 xl:row-span-1">
+            <div className="mb-2 flex items-center justify-between md:mb-3">
+              <div className="min-w-0 flex-1">
+                <p className="text-xs uppercase tracking-wider text-slate-400">Editor</p>
+                <h2 className="truncate text-lg font-semibold md:text-xl">Solution workspace</h2>
               </div>
-              <div className="flex items-center gap-2 text-xs text-slate-300">
-                <span className="rounded-md bg-slate-800 px-2 py-1">Python</span>
-                <span className="rounded-md bg-slate-800 px-2 py-1">Monaco</span>
+              <div className="flex shrink-0 items-center gap-1.5 text-xs text-slate-300">
+                <span className="rounded bg-slate-800 px-2 py-0.5">Python</span>
+                <span className="hidden rounded bg-slate-800 px-2 py-0.5 sm:inline">Monaco</span>
               </div>
             </div>
-            <div className="mt-4 overflow-hidden rounded-lg border border-slate-800 bg-slate-950/60">
+            <div className="min-h-0 flex-1 overflow-hidden rounded border border-slate-800 bg-slate-950/60">
               <MonacoEditor
-                height="320px"
+                height="100%"
                 language="python"
                 theme="vs-dark"
                 value={editorValue}
@@ -167,31 +167,27 @@ Keep the solution O(n) by using a hash map.`);
           </div>
 
           {/* Bottom left - Controls and metadata */}
-          <div className="flex flex-col gap-4 rounded-xl border border-slate-800 bg-slate-900/60 p-6 shadow-lg shadow-indigo-900/30">
+          <div className="flex min-h-0 flex-col gap-2 rounded-lg border border-slate-800 bg-slate-900/60 p-3 shadow-lg shadow-indigo-900/30 md:gap-3 md:p-4 xl:row-span-1">
             <div className="flex items-center justify-between">
-              <div>
-                <p className="text-xs uppercase tracking-[0.2em] text-slate-400">Flow</p>
-                <h2 className="text-2xl font-semibold">Exercise controls</h2>
-              </div>
-              <div className="flex gap-2 text-xs text-slate-300">
-                <span className="rounded-md bg-slate-800 px-2 py-1">Generate</span>
-                <span className="rounded-md bg-slate-800 px-2 py-1">Reset</span>
+              <div className="min-w-0 flex-1">
+                <p className="text-xs uppercase tracking-wider text-slate-400">Flow</p>
+                <h2 className="truncate text-lg font-semibold md:text-xl">Exercise controls</h2>
               </div>
             </div>
 
-            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+            <div className="grid min-h-0 flex-1 auto-rows-fr grid-cols-1 gap-2 sm:grid-cols-2 md:gap-3">
               <button
                 type="button"
                 onClick={handleGenerate}
                 disabled={isLoadingExercise}
-                className="rounded-lg bg-indigo-600 px-4 py-3 text-sm font-semibold text-white shadow-lg shadow-indigo-900/40 transition hover:bg-indigo-500 disabled:cursor-not-allowed disabled:opacity-60"
+                className="rounded bg-indigo-600 px-3 py-2.5 text-sm font-semibold text-white shadow-lg shadow-indigo-900/40 transition hover:bg-indigo-500 disabled:cursor-not-allowed disabled:opacity-60"
               >
                 {isLoadingExercise ? 'Loading exercise...' : 'Generate exercise'}
               </button>
               <button
                 type="button"
                 onClick={handleResetEditor}
-                className="rounded-lg border border-slate-700 px-4 py-3 text-sm font-semibold text-slate-100 transition hover:border-indigo-400 hover:text-indigo-200"
+                className="rounded border border-slate-700 px-3 py-2.5 text-sm font-semibold text-slate-100 transition hover:border-indigo-400 hover:text-indigo-200"
               >
                 Reset editor
               </button>
@@ -199,37 +195,37 @@ Keep the solution O(n) by using a hash map.`);
                 type="button"
                 onClick={handleRun}
                 disabled={isRunning}
-                className="rounded-lg border border-emerald-500/60 bg-emerald-500/10 px-4 py-3 text-sm font-semibold text-emerald-100 transition hover:bg-emerald-500/20 disabled:cursor-not-allowed disabled:opacity-60"
+                className="rounded border border-emerald-500/60 bg-emerald-500/10 px-3 py-2.5 text-sm font-semibold text-emerald-100 transition hover:bg-emerald-500/20 disabled:cursor-not-allowed disabled:opacity-60"
               >
                 {isRunning ? 'Running...' : 'Run in sandbox'}
               </button>
-              <div className="rounded-lg border border-slate-800 bg-slate-950/60 p-3 text-xs text-slate-300">
+              <div className="flex flex-col justify-center rounded border border-slate-800 bg-slate-950/60 p-2.5 text-xs text-slate-300">
                 <p className="font-semibold text-slate-200">API hookup (planned)</p>
-                <ul className="mt-2 space-y-1 list-disc list-inside text-slate-400">
-                  <li>POST {apiBase}/exercises/generate</li>
-                  <li>POST {apiBase}/exercises/{"{id}"}/run</li>
-                  <li>POST {apiBase}/exercises/{"{id}"}/submit</li>
+                <ul className="mt-1.5 space-y-0.5 text-[0.7rem] text-slate-400">
+                  <li className="truncate">POST /exercises/generate</li>
+                  <li className="truncate">POST /exercises/{"{id}"}/run</li>
+                  <li className="truncate">POST /exercises/{"{id}"}/submit</li>
                 </ul>
               </div>
             </div>
           </div>
 
           {/* Bottom right - Terminal */}
-          <div className="flex flex-col gap-4 rounded-xl border border-slate-800 bg-slate-900/60 p-6 shadow-lg shadow-indigo-900/30">
+          <div className="flex min-h-0 flex-col gap-2 rounded-lg border border-slate-800 bg-slate-900/60 p-3 shadow-lg shadow-indigo-900/30 md:gap-3 md:p-4 xl:row-span-1">
             <div className="flex items-center justify-between">
-              <div>
-                <p className="text-xs uppercase tracking-[0.2em] text-slate-400">Terminal</p>
-                <h2 className="text-2xl font-semibold">Execution logs</h2>
+              <div className="min-w-0 flex-1">
+                <p className="text-xs uppercase tracking-wider text-slate-400">Terminal</p>
+                <h2 className="truncate text-lg font-semibold md:text-xl">Execution logs</h2>
               </div>
               <button
                 type="button"
                 onClick={() => setTerminalLines([])}
-                className="rounded-md border border-slate-700 px-3 py-1 text-xs text-slate-200 transition hover:border-indigo-400 hover:text-indigo-200"
+                className="shrink-0 rounded border border-slate-700 px-2.5 py-0.5 text-xs text-slate-200 transition hover:border-indigo-400 hover:text-indigo-200"
               >
                 Clear
               </button>
             </div>
-            <div className="flex-1 overflow-auto rounded-lg border border-slate-800 bg-slate-950/60 p-3 font-mono text-sm text-slate-200">
+            <div className="min-h-0 flex-1 overflow-auto rounded border border-slate-800 bg-slate-950/60 p-2.5 font-mono text-sm text-slate-200">
               {terminalLines.length === 0 ? (
                 <p className="text-slate-500">Terminal cleared.</p>
               ) : (
