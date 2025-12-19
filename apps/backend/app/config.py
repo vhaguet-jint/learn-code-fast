@@ -15,6 +15,7 @@ class Settings(BaseSettings):
     azure_openai_endpoint: str | None = None
     azure_openai_api_key: str | None = None
     azure_openai_deployment: str | None = None
+    azure_openai_api_version: str | None = Field(default="2024-02-15-preview")
 
     class Config:
         env_file = ".env"

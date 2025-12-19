@@ -2,6 +2,7 @@ from fastapi import APIRouter, Body
 
 from .celery_app import echo
 from .config import get_settings
+from .services import generate_exercise
 
 router = APIRouter()
 
@@ -25,3 +26,8 @@ async def health():
 async def submit_echo(message: str = Body("ping", embed=True)):
     task = echo.delay(message)
     return {"task_id": task.id, "status": task.status}
+
+
+@router.post("/exercises", summary="Generate a coding exercise")
+async def create_exercise():
+    return await generate_exercise()
