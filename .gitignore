@@ -1,0 +1,23 @@
+__pycache__/
+*.py[cod]
+.env
+.env.local
+.env.development
+.env.production
+.env.test
+!.env.example
+
+# Python
+.venv/
+venv/
+*.egg-info/
+
+# Node
+node_modules/
+dist/
+.next/
+
+# Editor
+.DS_Store
+.idea/
+.vscode/
