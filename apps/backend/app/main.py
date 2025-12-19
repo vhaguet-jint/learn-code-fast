@@ -22,6 +22,25 @@ app.include_router(router)
 
 @app.on_event("startup")
 def on_startup() -> None:
+    import time
+    from sqlalchemy.exc import OperationalError
+    
+    max_retries = 20
+    retry_interval = 1
+    
+    for i in range(max_retries):
+        try:
+            # Try to connect to verify database is ready
+            with engine.connect() as connection:
+                print("Database connection successful!")
+                break
+        except OperationalError as e:
+            if i == max_retries - 1:
+                print(f"Failed to connect to database after {max_retries} attempts. Exiting.")
+                raise e
+            print(f"Database not ready ({e}). Retrying in {retry_interval}s... ({i+1}/{max_retries})")
+            time.sleep(retry_interval)
+
     Base.metadata.create_all(bind=engine)
 
 

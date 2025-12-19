@@ -120,13 +120,12 @@ Keep the solution O(n) by using a hash map.`);
                 <h2 className="text-2xl font-semibold">{exerciseTitle}</h2>
               </div>
               <span
-                className={`rounded-md px-3 py-1 text-xs font-semibold capitalize ${
-                  exerciseDifficulty === 'easy'
+                className={`rounded-md px-3 py-1 text-xs font-semibold capitalize ${exerciseDifficulty === 'easy'
                     ? 'bg-emerald-500/10 text-emerald-200'
                     : exerciseDifficulty === 'medium'
                       ? 'bg-amber-500/10 text-amber-200'
                       : 'bg-rose-500/10 text-rose-200'
-                }`}
+                  }`}
               >
                 {exerciseDifficulty}
               </span>
@@ -208,8 +207,8 @@ Keep the solution O(n) by using a hash map.`);
                 <p className="font-semibold text-slate-200">API hookup (planned)</p>
                 <ul className="mt-2 space-y-1 list-disc list-inside text-slate-400">
                   <li>POST {apiBase}/exercises/generate</li>
-                  <li>POST {apiBase}/exercises/{{id}}/run</li>
-                  <li>POST {apiBase}/exercises/{{id}}/submit</li>
+                  <li>POST {apiBase}/exercises/{"{id}"}/run</li>
+                  <li>POST {apiBase}/exercises/{"{id}"}/submit</li>
                 </ul>
               </div>
             </div>
