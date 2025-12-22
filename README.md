@@ -4,7 +4,7 @@ Minimal monorepo to bootstrap a self-hosted code-learning platform. The stack in
 
 ## Contents
 - **backend**: FastAPI API, Celery worker, PostgreSQL connection.
-- **frontend**: Next.js (TypeScript) + Tailwind + Monaco Editor (npm as package manager).
+- **frontend**: Next.js (TypeScript) + Tailwind + Monaco Editor (Bun as package manager).
 - **infrastructure**: Dockerfiles and `docker-compose` for all services (PostgreSQL, Redis included).
 
 ## Prerequisites
@@ -14,7 +14,7 @@ Minimal monorepo to bootstrap a self-hosted code-learning platform. The stack in
   cp .env.example .env
   ```
   Update `AZURE_OPENAI_ENDPOINT`, `AZURE_OPENAI_API_KEY`, and `AZURE_OPENAI_DEPLOYMENT`. The public API URL (`NEXT_PUBLIC_API_BASE_URL`) defaults to `http://localhost:8000`.
-  For local frontend development outside Docker, install dependencies with `npm install` and run `npm run dev`.
+  For local frontend development outside Docker, install dependencies with `bun install` and run `bun run dev`.
 
 ## Quick start
 1. Build and launch all containers:
