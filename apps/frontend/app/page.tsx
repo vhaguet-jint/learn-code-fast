@@ -1,7 +1,7 @@
 'use client';
 
 import dynamic from 'next/dynamic';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import ReactMarkdown from 'react-markdown';
 
 const MonacoEditor = dynamic(() => import('@monaco-editor/react'), {
@@ -28,8 +28,42 @@ assert count_vowels("rhythms") == 0
 \`\`\``;
 
 interface ChatMessage {
-  role: 'user' | 'assistant';
+  role: 'user' | 'assistant' | 'system';
   content: string;
+}
+
+interface UiContextSnapshot {
+  exerciseId: string | null;
+  exerciseTitle: string;
+  exerciseDifficulty: 'easy' | 'medium' | 'hard';
+  promptMarkdown: string;
+  editorValue: string;
+  terminalLines: string[];
+}
+
+interface UserContext {
+  user_id: string;
+  profile: {
+    role: string;
+    age_range?: string | null;
+    timezone?: string | null;
+    preferred_languages: string[];
+    learning_preferences: {
+      modality: string;
+      notes?: string | null;
+    }[];
+  };
+  languages: {
+    name: string;
+    proficiency: string;
+    years_experience?: number | null;
+    primary_frameworks: string[];
+  }[];
+  learning_goals: string[];
+  strengths: string[];
+  opportunities: string[];
+  last_updated: string;
+  version: string;
 }
 
 export default function Home() {
@@ -48,6 +82,9 @@ export default function Home() {
   const [terminalLines, setTerminalLines] = useState<string[]>([
     '💡 Terminal ready. Use the buttons to run or request new exercises.',
   ]);
+  const defaultSystemPrompt =
+    'You are a helpful coding tutor. Be concise, provide actionable suggestions, and keep explanations grounded in the user context.';
+  const [systemPrompt, setSystemPrompt] = useState<string>(defaultSystemPrompt);
   const [isRunning, setIsRunning] = useState(false);
   const [isLoadingExercise, setIsLoadingExercise] = useState(false);
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([
@@ -55,6 +92,100 @@ export default function Home() {
   ]);
   const [chatInput, setChatInput] = useState('');
   const [isChatLoading, setIsChatLoading] = useState(false);
+
+  const buildUiContextSnapshot = (): UiContextSnapshot => ({
+    exerciseId,
+    exerciseTitle,
+    exerciseDifficulty,
+    promptMarkdown,
+    editorValue,
+    terminalLines,
+  });
+
+  const formatUiContext = (context: UiContextSnapshot): string => {
+    // Future guardrails: limit token counts, sanitize user-provided markdown, and strip prompt injections.
+    const exerciseLine = context.exerciseId
+      ? `Exercise: ${context.exerciseTitle} (${context.exerciseDifficulty}).`
+      : 'Exercise: none loaded.';
+    const promptLine = context.promptMarkdown
+      ? `Prompt markdown: ${context.promptMarkdown}`
+      : 'Prompt markdown: none.';
+    const codeLine = context.editorValue ? `Current code:\n${context.editorValue}` : 'Current code: empty.';
+    const terminalLine =
+      context.terminalLines.length > 0
+        ? `Recent terminal logs:\n${context.terminalLines.join('\n')}`
+        : 'Recent terminal logs: none.';
+
+    return [exerciseLine, promptLine, codeLine, terminalLine].join('\n');
+  };
+
+  const buildSystemPromptFromContext = (context: UserContext, uiContext: UiContextSnapshot): string => {
+    const languagesSummary =
+      context.languages.length > 0
+        ? context.languages
+            .map((lang) => {
+              const experience = lang.years_experience != null ? `${lang.years_experience} yrs` : 'unspecified exp';
+              const frameworks = lang.primary_frameworks.length > 0 ? `frameworks: ${lang.primary_frameworks.join(', ')}` : 'frameworks: none listed';
+              return `${lang.name} (${lang.proficiency}, ${experience}; ${frameworks})`;
+            })
+            .join('; ')
+        : 'No languages recorded.';
+
+    const learningPreferences =
+      context.profile.learning_preferences.length > 0
+        ? context.profile.learning_preferences
+            .map((pref) => (pref.notes ? `${pref.modality} (${pref.notes})` : pref.modality))
+            .join('; ')
+        : 'No learning preferences provided.';
+
+    const goals = context.learning_goals.length > 0 ? context.learning_goals.join('; ') : 'No active goals listed.';
+    const strengths = context.strengths.length > 0 ? context.strengths.join('; ') : 'No strengths provided.';
+    const opportunities =
+      context.opportunities.length > 0 ? context.opportunities.join('; ') : 'No growth areas captured.';
+
+    const profileDetails = [context.profile.role];
+    if (context.profile.age_range) profileDetails.push(`age ${context.profile.age_range}`);
+    if (context.profile.timezone) profileDetails.push(`timezone ${context.profile.timezone}`);
+    if (context.profile.preferred_languages.length > 0)
+      profileDetails.push(`prefers ${context.profile.preferred_languages.join(', ')} explanations`);
+
+    return [
+      `You are a coding tutor helping learner ${context.user_id}.`,
+      `Profile: ${profileDetails.join('; ')}.`,
+      `Programming background: ${languagesSummary}.`,
+      `Learning goals: ${goals}.`,
+      `Strengths: ${strengths}.`,
+      `Growth opportunities: ${opportunities}.`,
+      `Learning preferences: ${learningPreferences}.`,
+      `Last updated ${new Date(context.last_updated).toISOString()} (version ${context.version}).`,
+      'Use the following UI context to ground your response:',
+      formatUiContext(uiContext),
+      'Provide concise, example-driven guidance that references this context when relevant.',
+    ].join(' ');
+  };
+
+  const refreshSystemPrompt = async (uiContext: UiContextSnapshot) => {
+    try {
+      const response = await fetch(`${apiBase}/user-context`);
+      if (!response.ok) {
+        throw new Error(`Failed to load user context (status ${response.status})`);
+      }
+      const data: UserContext = await response.json();
+      const prompt = buildSystemPromptFromContext(data, uiContext);
+      setSystemPrompt(prompt);
+      return prompt;
+    } catch (error) {
+      console.error('Unable to load user context for system prompt.', error);
+      setSystemPrompt(defaultSystemPrompt);
+      return `${defaultSystemPrompt}\n${formatUiContext(uiContext)}`;
+    }
+  };
+
+  useEffect(() => {
+    const uiContext = buildUiContextSnapshot();
+    refreshSystemPrompt(uiContext);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [apiBase]);
 
   const appendLine = (line: string) => setTerminalLines((prev) => [...prev.slice(-10), line]);
 
@@ -149,10 +280,18 @@ export default function Home() {
     setIsChatLoading(true);
 
     try {
+      const uiContext = buildUiContextSnapshot();
+      const resolvedSystemPrompt = await refreshSystemPrompt(uiContext);
+
       const conversation_history = chatMessages.map((msg) => ({
         role: msg.role,
         content: msg.content,
       }));
+
+      const system_message = {
+        role: 'system' as const,
+        content: resolvedSystemPrompt || systemPrompt || defaultSystemPrompt,
+      };
 
       const response = await fetch(`${apiBase}/chat/ask/batch`, {
         method: 'POST',
@@ -160,7 +299,7 @@ export default function Home() {
         body: JSON.stringify({
           message: userMessage,
           exercise_id: exerciseId,
-          conversation_history,
+          conversation_history: [system_message, ...conversation_history],
         }),
       });
 
