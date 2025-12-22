@@ -27,6 +27,11 @@ assert count_vowels("Hello") == 2
 assert count_vowels("rhythms") == 0
 \`\`\``;
 
+interface ChatMessage {
+  role: 'user' | 'assistant';
+  content: string;
+}
+
 export default function Home() {
   const apiBase = process.env.NEXT_PUBLIC_API_BASE_URL ?? 'http://localhost:8000';
   const starter = useMemo(
@@ -44,6 +49,11 @@ export default function Home() {
   ]);
   const [isRunning, setIsRunning] = useState(false);
   const [isLoadingExercise, setIsLoadingExercise] = useState(false);
+  const [chatMessages, setChatMessages] = useState<ChatMessage[]>([
+    { role: 'assistant', content: 'Hi! I\'m here to help you with your coding exercise. Ask me anything about the problem, hints, or how to approach it!' },
+  ]);
+  const [chatInput, setChatInput] = useState('');
+  const [isChatLoading, setIsChatLoading] = useState(false);
 
   const appendLine = (line: string) => setTerminalLines((prev) => [...prev.slice(-10), line]);
 
@@ -94,6 +104,27 @@ Keep the solution O(n) by using a hash map.`);
     appendLine('↩️ Editor reset to starter template.');
   };
 
+  const handleChatSend = async () => {
+    if (!chatInput.trim()) return;
+
+    const userMessage = chatInput.trim();
+    setChatInput('');
+    setChatMessages((prev) => [...prev, { role: 'user', content: userMessage }]);
+    setIsChatLoading(true);
+
+    try {
+      // Placeholder: Will connect to POST /chat/ask endpoint later
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+
+      const assistantResponse = `Thanks for asking about the exercise! This is a placeholder response. The backend will provide intelligent hints and explanations. (Connect to POST /chat/ask)`;
+      setChatMessages((prev) => [...prev, { role: 'assistant', content: assistantResponse }]);
+    } catch (error) {
+      setChatMessages((prev) => [...prev, { role: 'assistant', content: 'Error communicating with the LLM. Please try again.' }]);
+    } finally {
+      setIsChatLoading(false);
+    }
+  };
+
   return (
     <main className="flex min-h-screen flex-col bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 text-slate-100">
       <div className="flex h-screen w-full flex-col gap-3 p-3 md:gap-4 md:p-4">
@@ -108,6 +139,18 @@ Keep the solution O(n) by using a hash map.`);
               <span className="hidden rounded-full bg-emerald-500/10 px-2 py-0.5 text-emerald-200 sm:inline">Monaco</span>
               <span className="hidden rounded-full bg-sky-500/10 px-2 py-0.5 text-sky-200 md:inline">ReactMarkdown</span>
             </div>
+          </div>
+          
+          {/* Generate Exercise button - top of page */}
+          <div className="flex gap-2">
+            <button
+              type="button"
+              onClick={handleGenerate}
+              disabled={isLoadingExercise}
+              className="rounded bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow-lg shadow-indigo-900/40 transition hover:bg-indigo-500 disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              {isLoadingExercise ? '✨ Loading exercise...' : '✨ Generate Exercise'}
+            </button>
           </div>
         </header>
 
@@ -137,9 +180,9 @@ Keep the solution O(n) by using a hash map.`);
             </div>
           </div>
 
-          {/* Top right - Monaco editor */}
+          {/* Top right - Monaco editor with controls */}
           <div className="flex min-h-0 flex-col rounded-lg border border-slate-800 bg-slate-900/60 p-3 shadow-lg shadow-indigo-900/30 md:p-4 xl:row-span-1">
-            <div className="mb-2 flex items-center justify-between md:mb-3">
+            <div className="mb-2 flex items-center justify-between gap-2 md:mb-3">
               <div className="min-w-0 flex-1">
                 <p className="text-xs uppercase tracking-wider text-slate-400">Editor</p>
                 <h2 className="truncate text-lg font-semibold md:text-xl">Solution workspace</h2>
@@ -149,7 +192,7 @@ Keep the solution O(n) by using a hash map.`);
                 <span className="hidden rounded bg-slate-800 px-2 py-0.5 sm:inline">Monaco</span>
               </div>
             </div>
-            <div className="min-h-0 flex-1 overflow-hidden rounded border border-slate-800 bg-slate-950/60">
+            <div className="min-h-0 flex-1 overflow-hidden rounded border border-slate-800 bg-slate-950/60 mb-2">
               <MonacoEditor
                 height="100%"
                 language="python"
@@ -164,49 +207,82 @@ Keep the solution O(n) by using a hash map.`);
                 }}
               />
             </div>
-          </div>
-
-          {/* Bottom left - Controls and metadata */}
-          <div className="flex min-h-0 flex-col gap-2 rounded-lg border border-slate-800 bg-slate-900/60 p-3 shadow-lg shadow-indigo-900/30 md:gap-3 md:p-4 xl:row-span-1">
-            <div className="flex items-center justify-between">
-              <div className="min-w-0 flex-1">
-                <p className="text-xs uppercase tracking-wider text-slate-400">Flow</p>
-                <h2 className="truncate text-lg font-semibold md:text-xl">Exercise controls</h2>
-              </div>
-            </div>
-
-            <div className="grid min-h-0 flex-1 auto-rows-fr grid-cols-1 gap-2 sm:grid-cols-2 md:gap-3">
-              <button
-                type="button"
-                onClick={handleGenerate}
-                disabled={isLoadingExercise}
-                className="rounded bg-indigo-600 px-3 py-2.5 text-sm font-semibold text-white shadow-lg shadow-indigo-900/40 transition hover:bg-indigo-500 disabled:cursor-not-allowed disabled:opacity-60"
-              >
-                {isLoadingExercise ? 'Loading exercise...' : 'Generate exercise'}
-              </button>
-              <button
-                type="button"
-                onClick={handleResetEditor}
-                className="rounded border border-slate-700 px-3 py-2.5 text-sm font-semibold text-slate-100 transition hover:border-indigo-400 hover:text-indigo-200"
-              >
-                Reset editor
-              </button>
+            {/* Editor control buttons */}
+            <div className="grid grid-cols-2 gap-2">
               <button
                 type="button"
                 onClick={handleRun}
                 disabled={isRunning}
-                className="rounded border border-emerald-500/60 bg-emerald-500/10 px-3 py-2.5 text-sm font-semibold text-emerald-100 transition hover:bg-emerald-500/20 disabled:cursor-not-allowed disabled:opacity-60"
+                className="rounded border border-emerald-500/60 bg-emerald-500/10 px-3 py-2 text-sm font-semibold text-emerald-100 transition hover:bg-emerald-500/20 disabled:cursor-not-allowed disabled:opacity-60"
               >
-                {isRunning ? 'Running...' : 'Run in sandbox'}
+                {isRunning ? '▶️ Running...' : '▶️ Run in sandbox'}
               </button>
-              <div className="flex flex-col justify-center rounded border border-slate-800 bg-slate-950/60 p-2.5 text-xs text-slate-300">
-                <p className="font-semibold text-slate-200">API hookup (planned)</p>
-                <ul className="mt-1.5 space-y-0.5 text-[0.7rem] text-slate-400">
-                  <li className="truncate">POST /exercises/generate</li>
-                  <li className="truncate">POST /exercises/{"{id}"}/run</li>
-                  <li className="truncate">POST /exercises/{"{id}"}/submit</li>
-                </ul>
+              <button
+                type="button"
+                onClick={handleResetEditor}
+                className="rounded border border-slate-700 px-3 py-2 text-sm font-semibold text-slate-100 transition hover:border-indigo-400 hover:text-indigo-200"
+              >
+                ↩️ Reset editor
+              </button>
+            </div>
+          </div>
+
+          {/* Bottom left - Chat interface */}
+          <div className="flex min-h-0 flex-col gap-2 rounded-lg border border-slate-800 bg-slate-900/60 p-3 shadow-lg shadow-indigo-900/30 md:gap-3 md:p-4 xl:row-span-1">
+            <div className="flex items-center justify-between">
+              <div className="min-w-0 flex-1">
+                <p className="text-xs uppercase tracking-wider text-slate-400">Assistant</p>
+                <h2 className="truncate text-lg font-semibold md:text-xl">Ask for help</h2>
               </div>
+            </div>
+
+            {/* Chat messages area */}
+            <div className="min-h-0 flex-1 overflow-auto rounded border border-slate-800 bg-slate-950/60 p-3 space-y-3">
+              {chatMessages.length === 0 ? (
+                <p className="text-xs text-slate-400">No messages yet. Start a conversation!</p>
+              ) : (
+                chatMessages.map((msg, idx) => (
+                  <div key={idx} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                    <div
+                      className={`max-w-xs rounded px-3 py-2 text-sm ${
+                        msg.role === 'user'
+                          ? 'bg-indigo-600/40 text-indigo-100 border border-indigo-500/40'
+                          : 'bg-slate-800/60 text-slate-200 border border-slate-700/40'
+                      }`}
+                    >
+                      {msg.content}
+                    </div>
+                  </div>
+                ))
+              )}
+              {isChatLoading && (
+                <div className="flex justify-start">
+                  <div className="bg-slate-800/60 text-slate-200 border border-slate-700/40 rounded px-3 py-2 text-sm">
+                    <span className="inline-block animate-pulse">Thinking...</span>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Chat input area */}
+            <div className="flex gap-2">
+              <input
+                type="text"
+                value={chatInput}
+                onChange={(e) => setChatInput(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && !isChatLoading && handleChatSend()}
+                placeholder="Ask a question about the exercise..."
+                disabled={isChatLoading}
+                className="min-w-0 flex-1 rounded border border-slate-700 bg-slate-950/60 px-3 py-2 text-sm text-slate-100 placeholder-slate-400 transition focus:border-indigo-400 focus:outline-none disabled:opacity-60"
+              />
+              <button
+                type="button"
+                onClick={handleChatSend}
+                disabled={isChatLoading || !chatInput.trim()}
+                className="shrink-0 rounded bg-indigo-600/60 px-3 py-2 text-sm font-semibold text-indigo-100 transition hover:bg-indigo-600 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                Send
+              </button>
             </div>
           </div>
 

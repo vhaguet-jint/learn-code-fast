@@ -86,3 +86,42 @@ Planned FastAPI routes to support the exercise playground UI. These are stubs; i
     "starter_code": "def solution(...): ..."
   }
   ```
+
+### POST `/chat/ask`
+
+- **Purpose:** Send a message to the LLM assistant for help with the current exercise. Supports streaming responses and maintains conversation context.
+- **Request body:**
+  ```json
+  {
+    "message": "How do I approach this problem?",
+    "exercise_id": "uuid",
+    "conversation_history": [
+      {
+        "role": "user",
+        "content": "Can you give me a hint?"
+      },
+      {
+        "role": "assistant",
+        "content": "Sure! Try using a set to track..."
+      }
+    ]
+  }
+  ```
+- **Response:** Server-Sent Events (text/event-stream)
+  ```
+  data: {"type": "message", "content": "You can solve this..."}
+  data: {"type": "message", "content": " by iterating through..."}
+  data: {"type": "done"}
+  ```
+
+### POST `/chat/ask/batch`
+
+- **Purpose:** Non-streaming variant of `/chat/ask` for simpler implementations.
+- **Request body:** Same as `/chat/ask`
+- **Response:**
+  ```json
+  {
+    "response": "Full response text from the assistant",
+    "tokens_used": 150
+  }
+  ```
