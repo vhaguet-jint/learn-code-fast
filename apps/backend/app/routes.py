@@ -1,12 +1,15 @@
 import uuid
 
 from fastapi import APIRouter, Body, Depends, Path
+from fastapi.responses import StreamingResponse
 from sqlalchemy.orm import Session
 
 from .celery_app import echo
 from .config import get_settings
 from .db import get_session
 from .schemas import (
+    ChatBatchResponse,
+    ChatRequest,
     CodeExecutionRequest,
     ExerciseRequest,
     ExerciseResponse,
@@ -14,6 +17,8 @@ from .schemas import (
     SubmissionResult,
 )
 from .services import (
+    chat_batch_response,
+    chat_stream_response,
     generate_exercise,
     get_exercise_or_404,
     run_code,
@@ -97,3 +102,34 @@ async def submit_exercise(
 ):
     exercise = get_exercise_or_404(session, exercise_id)
     return submit_code(session, exercise, payload)
+
+
+@router.post(
+    "/chat/ask",
+    summary="Chat with the LLM assistant (streaming)",
+    response_class=StreamingResponse,
+)
+async def chat_ask(
+    payload: ChatRequest,
+    session: Session = Depends(get_session),
+):
+    exercise = (
+        get_exercise_or_404(session, payload.exercise_id) if payload.exercise_id else None
+    )
+    stream = await chat_stream_response(payload, exercise)
+    return StreamingResponse(stream, media_type="text/event-stream")
+
+
+@router.post(
+    "/chat/ask/batch",
+    summary="Chat with the LLM assistant (batch)",
+    response_model=ChatBatchResponse,
+)
+async def chat_ask_batch(
+    payload: ChatRequest,
+    session: Session = Depends(get_session),
+):
+    exercise = (
+        get_exercise_or_404(session, payload.exercise_id) if payload.exercise_id else None
+    )
+    return await chat_batch_response(payload, exercise)
