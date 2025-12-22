@@ -43,6 +43,7 @@ export default function Home() {
   const [editorValue, setEditorValue] = useState(starter);
   const [exerciseTitle, setExerciseTitle] = useState('Count vowels');
   const [exerciseDifficulty, setExerciseDifficulty] = useState<'easy' | 'medium' | 'hard'>('easy');
+  const [exerciseId, setExerciseId] = useState<string | null>(null);
   const [promptMarkdown, setPromptMarkdown] = useState(placeholderMarkdown);
   const [terminalLines, setTerminalLines] = useState<string[]>([
     '💡 Terminal ready. Use the buttons to run or request new exercises.',
@@ -58,48 +59,83 @@ export default function Home() {
   const appendLine = (line: string) => setTerminalLines((prev) => [...prev.slice(-10), line]);
 
   const handleRun = async () => {
+    if (!exerciseId) {
+      appendLine('⚠️ No exercise loaded. Please generate an exercise first.');
+      return;
+    }
+
     setIsRunning(true);
-    appendLine('▶️ Sending code to backend (stub). Waiting for execution result...');
+    appendLine('▶️ Sending code to backend. Waiting for execution result...');
 
-    await new Promise((resolve) => setTimeout(resolve, 1000));
+    try {
+      const response = await fetch(`${apiBase}/exercises/${exerciseId}/run`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ code: editorValue, language: 'python' }),
+      });
 
-    appendLine('✅ Execution complete. (Connect to POST /exercises/{id}/run)');
-    setIsRunning(false);
+      if (!response.ok) {
+        appendLine(`❌ Run failed with status ${response.status}`);
+        return;
+      }
+
+      const data: { stdout: string; stderr: string; duration_ms: number } = await response.json();
+      appendLine(`✅ Execution complete in ${data.duration_ms}ms.`);
+      if (data.stdout) appendLine(`stdout:\n${data.stdout}`);
+      if (data.stderr) appendLine(`stderr:\n${data.stderr}`);
+    } catch (error) {
+      appendLine('❌ Error contacting backend for run.');
+      console.error(error);
+    } finally {
+      setIsRunning(false);
+    }
   };
 
   const handleGenerate = async () => {
     setIsLoadingExercise(true);
-    appendLine('✨ Requesting a new exercise from the backend (stub)...');
+    appendLine('✨ Requesting a new exercise from the backend...');
 
-    await new Promise((resolve) => setTimeout(resolve, 800));
+    try {
+      const response = await fetch(`${apiBase}/exercises/generate`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ topic: 'strings', difficulty: 'easy', language: 'python' }),
+      });
 
-    setExerciseTitle('Two Sum (LLM draft)');
-    setExerciseDifficulty('medium');
-    setPromptMarkdown(`### Goal
-Return the indices of two numbers in an array that add up to a target.
+      if (!response.ok) {
+        appendLine(`❌ Failed to generate exercise (status ${response.status}).`);
+        return;
+      }
 
-### Rules
-- Input: list of integers and target integer
-- Output: tuple with two indices (order does not matter)
-- Raise a \`ValueError\` if no combination is found
+      const data: {
+        id: string;
+        title: string;
+        difficulty: 'easy' | 'medium' | 'hard';
+        prompt_markdown: string;
+        starter_code: string;
+        language: string;
+      } = await response.json();
 
-### Example
-\`\`\`python
-assert two_sum([2, 7, 11, 15], 9) == (0, 1)
-\`\`\`
+      setExerciseId(data.id);
+      setExerciseTitle(data.title);
+      setExerciseDifficulty(data.difficulty);
+      setPromptMarkdown(data.prompt_markdown);
+      setEditorValue(data.starter_code);
 
-### Notes
-Keep the solution O(n) by using a hash map.`);
-    setEditorValue(`# Two Sum starter\nfrom typing import List, Tuple\n\n\nclass Solution:\n    def two_sum(self, nums: List[int], target: int) -> Tuple[int, int]:\n        seen = {}\n        for idx, value in enumerate(nums):\n            if target - value in seen:\n                return seen[target - value], idx\n            seen[value] = idx\n        raise ValueError("No solution found")\n`);
-    appendLine('📥 New prompt received. (Connect to POST /exercises/generate)');
-
-    setIsLoadingExercise(false);
+      appendLine(`📥 New exercise loaded: ${data.title} (${data.difficulty}).`);
+    } catch (error) {
+      appendLine('❌ Error contacting backend for exercise generation.');
+      console.error(error);
+    } finally {
+      setIsLoadingExercise(false);
+    }
   };
 
   const handleResetEditor = () => {
     setEditorValue(starter);
     setExerciseTitle('Count vowels');
     setExerciseDifficulty('easy');
+    setExerciseId(null);
     setPromptMarkdown(placeholderMarkdown);
     appendLine('↩️ Editor reset to starter template.');
   };
@@ -113,13 +149,30 @@ Keep the solution O(n) by using a hash map.`);
     setIsChatLoading(true);
 
     try {
-      // Placeholder: Will connect to POST /chat/ask endpoint later
-      await new Promise((resolve) => setTimeout(resolve, 1000));
+      const conversation_history = chatMessages.map((msg) => ({
+        role: msg.role,
+        content: msg.content,
+      }));
 
-      const assistantResponse = `Thanks for asking about the exercise! This is a placeholder response. The backend will provide intelligent hints and explanations. (Connect to POST /chat/ask)`;
-      setChatMessages((prev) => [...prev, { role: 'assistant', content: assistantResponse }]);
+      const response = await fetch(`${apiBase}/chat/ask/batch`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          message: userMessage,
+          exercise_id: exerciseId,
+          conversation_history,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`Chat request failed with status ${response.status}`);
+      }
+
+      const data: { response: string } = await response.json();
+      setChatMessages((prev) => [...prev, { role: 'assistant', content: data.response }]);
     } catch (error) {
       setChatMessages((prev) => [...prev, { role: 'assistant', content: 'Error communicating with the LLM. Please try again.' }]);
+      console.error(error);
     } finally {
       setIsChatLoading(false);
     }

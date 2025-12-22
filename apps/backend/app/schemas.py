@@ -44,3 +44,22 @@ class SubmissionResult(RunResult):
     status: Literal["passed", "failed"]
     score: float
     details: SubmissionDetails
+
+
+Role = Literal["system", "user", "assistant"]
+
+
+class ConversationMessage(BaseModel):
+    role: Role
+    content: str
+
+
+class ChatRequest(BaseModel):
+    message: str
+    exercise_id: uuid.UUID | None = None
+    conversation_history: list[ConversationMessage] = Field(default_factory=list)
+
+
+class ChatBatchResponse(BaseModel):
+    response: str
+    tokens_used: int = 0

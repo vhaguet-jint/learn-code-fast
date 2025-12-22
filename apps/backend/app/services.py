@@ -10,6 +10,9 @@ from sqlalchemy.orm import Session
 from .config import get_settings
 from .models import Exercise, Submission
 from .schemas import (
+    ChatBatchResponse,
+    ChatRequest,
+    ConversationMessage,
     CodeExecutionRequest,
     ExerciseRequest,
     RunResult,
@@ -173,3 +176,91 @@ def submit_code(session: Session, exercise: Exercise, payload: CodeExecutionRequ
         duration_ms=run_result.duration_ms,
         details=details,
     )
+
+
+def _build_chat_messages(
+    payload: ChatRequest, exercise: Exercise | None
+) -> list[dict[str, str]]:
+    system_parts: list[str] = [
+        "You are a helpful coding tutor guiding a learner through a short exercise.",
+        "Be concise and focus on actionable suggestions.",
+    ]
+    if exercise:
+        system_parts.append(
+            f"Exercise context: {exercise.title} (difficulty: {exercise.difficulty}, language: {exercise.language})."
+        )
+        system_parts.append(f"Prompt: {exercise.prompt_markdown}")
+
+    messages: list[dict[str, str]] = [
+        {"role": "system", "content": " ".join(system_parts)},
+    ]
+
+    for item in payload.conversation_history:
+        if item.role in {"user", "assistant", "system"}:
+            messages.append({"role": item.role, "content": item.content})
+
+    messages.append({"role": "user", "content": payload.message})
+    return messages
+
+
+def _fallback_chat_response(payload: ChatRequest, exercise: Exercise | None) -> str:
+    intro = ""
+    if exercise:
+        intro = f"I'll help with the exercise '{exercise.title}'. "
+    history_hint = (
+        f"Previously we discussed {len(payload.conversation_history)} messages. "
+        if payload.conversation_history
+        else ""
+    )
+    return f"{intro}{history_hint}Here is a quick hint: try breaking the problem into small steps and test your code frequently."
+
+
+async def _perform_chat_completion(
+    payload: ChatRequest, exercise: Exercise | None
+) -> tuple[str, int]:
+    settings = get_settings()
+    if not settings.azure_openai_endpoint or not settings.azure_openai_api_key or not settings.azure_openai_deployment:
+        fallback_text = _fallback_chat_response(payload, exercise)
+        return fallback_text, 0
+
+    client = AsyncAzureOpenAI(
+        api_key=settings.azure_openai_api_key,
+        api_version=settings.azure_openai_api_version,
+        azure_endpoint=settings.azure_openai_endpoint,
+    )
+
+    messages = _build_chat_messages(payload, exercise)
+    completion = await client.chat.completions.create(
+        model=settings.azure_openai_deployment,
+        messages=messages,
+        temperature=0.4,
+        max_tokens=350,
+    )
+
+    content = completion.choices[0].message.content or ""
+    tokens_used = completion.usage.total_tokens if completion.usage else 0
+    return content, tokens_used
+
+
+async def chat_batch_response(payload: ChatRequest, exercise: Exercise | None) -> ChatBatchResponse:
+    content, tokens_used = await _perform_chat_completion(payload, exercise)
+    return ChatBatchResponse(response=content, tokens_used=tokens_used)
+
+
+async def chat_stream_response(payload: ChatRequest, exercise: Exercise | None):
+    content, _ = await _perform_chat_completion(payload, exercise)
+
+    async def _gen():
+        if not content:
+            yield "data: {\"type\": \"done\"}\n\n"
+            return
+
+        chunk_size = 400
+        for idx in range(0, len(content), chunk_size):
+            chunk = content[idx : idx + chunk_size]
+            message = json.dumps({"type": "message", "content": chunk})
+            yield f"data: {message}\n\n"
+
+        yield "data: {\"type\": \"done\"}\n\n"
+
+    return _gen()
