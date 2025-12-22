@@ -3,7 +3,8 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from .config import get_settings
 from .db import Base, engine
-from .routes import router
+from .routes import router as core_router
+from .user_context import router as user_context_router
 
 settings = get_settings()
 
@@ -17,17 +18,18 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-app.include_router(router)
+app.include_router(core_router)
+app.include_router(user_context_router)
 
 
 @app.on_event("startup")
 def on_startup() -> None:
     import time
     from sqlalchemy.exc import OperationalError
-    
+
     max_retries = 20
     retry_interval = 1
-    
+
     for i in range(max_retries):
         try:
             # Try to connect to verify database is ready
