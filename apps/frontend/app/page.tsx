@@ -140,6 +140,48 @@ export default function Home() {
     appendLine('↩️ Editor reset to starter template.');
   };
 
+  const handleSubmit = async () => {
+    if (!exerciseId) {
+      appendLine('⚠️ No exercise loaded. Please generate an exercise first.');
+      return;
+    }
+
+    setIsRunning(true);
+    appendLine('📤 Submitting solution for evaluation...');
+
+    try {
+      const response = await fetch(`${apiBase}/exercises/${exerciseId}/submit`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ code: editorValue, language: 'python' }),
+      });
+
+      if (!response.ok) {
+        appendLine(`❌ Submission failed with status ${response.status}`);
+        return;
+      }
+
+      const data: {
+        status: 'passed' | 'failed';
+        score: number;
+        stdout: string;
+        stderr: string;
+        details: { tests_run: number; tests_failed: number };
+      } = await response.json();
+
+      const statusEmoji = data.status === 'passed' ? '✅' : '❌';
+      appendLine(`${statusEmoji} Submission result: ${data.status.toUpperCase()}`);
+      appendLine(`📊 Score: ${(data.score * 100).toFixed(1)}% (${data.details.tests_run - data.details.tests_failed}/${data.details.tests_run} tests passed)`);
+      if (data.stdout) appendLine(`stdout:\n${data.stdout}`);
+      if (data.stderr) appendLine(`stderr:\n${data.stderr}`);
+    } catch (error) {
+      appendLine('❌ Error contacting backend for submission.');
+      console.error(error);
+    } finally {
+      setIsRunning(false);
+    }
+  };
+
   const handleChatSend = async () => {
     if (!chatInput.trim()) return;
 
@@ -261,7 +303,7 @@ export default function Home() {
               />
             </div>
             {/* Editor control buttons */}
-            <div className="grid grid-cols-2 gap-2">
+            <div className="grid grid-cols-3 gap-2">
               <button
                 type="button"
                 onClick={handleRun}
@@ -269,6 +311,14 @@ export default function Home() {
                 className="rounded border border-emerald-500/60 bg-emerald-500/10 px-3 py-2 text-sm font-semibold text-emerald-100 transition hover:bg-emerald-500/20 disabled:cursor-not-allowed disabled:opacity-60"
               >
                 {isRunning ? '▶️ Running...' : '▶️ Run in sandbox'}
+              </button>
+              <button
+                type="button"
+                onClick={handleSubmit}
+                disabled={isRunning}
+                className="rounded border border-amber-500/60 bg-amber-500/10 px-3 py-2 text-sm font-semibold text-amber-100 transition hover:bg-amber-500/20 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {isRunning ? '📤 Submitting...' : '📤 Submit solution'}
               </button>
               <button
                 type="button"
