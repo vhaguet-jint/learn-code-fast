@@ -51,7 +51,7 @@ Planned FastAPI routes to support the exercise playground UI. These are stubs; i
 
 ### POST `/exercises/{exercise_id}/submit`
 
-- **Purpose:** Submit final solution, run tests, and record result.
+- **Purpose:** Submit final solution, run tests, and record result. This endpoint evaluates the code against the exercise test suite and returns a pass/fail status with detailed results.
 - **Request body:**
   ```json
   {
@@ -62,7 +62,7 @@ Planned FastAPI routes to support the exercise playground UI. These are stubs; i
 - **Response:**
   ```json
   {
-    "status": "passed", // passed | failed
+    "status": "passed",
     "score": 1.0,
     "stdout": "All tests passed",
     "stderr": "",
@@ -72,6 +72,12 @@ Planned FastAPI routes to support the exercise playground UI. These are stubs; i
     }
   }
   ```
+- **Response Fields:**
+  - `status` (string): Either `"passed"` or `"failed"` indicating if all tests passed.
+  - `score` (number): Float between 0.0 and 1.0 representing the proportion of passing tests.
+  - `stdout` (string): Standard output from test execution.
+  - `stderr` (string): Standard error output (if any errors occurred).
+  - `details` (object): Breakdown of test execution with `tests_run` and `tests_failed` counts.
 
 ### GET `/exercises/{exercise_id}`
 
